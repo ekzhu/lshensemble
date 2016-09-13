@@ -3,21 +3,25 @@ package lshensemble
 import (
 	"encoding/binary"
 	"hash/fnv"
-	"math"
 	"math/rand"
 
 	minwise "github.com/dgryski/go-minhash"
 )
 
+// The number of byte in a hash value for Minhash
 const HashValueSize = 8
 
+// Represents a MinHash object
 type Minhash struct {
 	mw *minwise.MinWise
 }
 
+// Represents a MinHash signature - an array of hash values
 type Signature []uint64
 
-func NewMinhash(seed, size int) *Minhash {
+// Initialize a MinHash object with a seed and the number of
+// hash functions.
+func NewMinhash(seed, numHash int) *Minhash {
 	r := rand.New(rand.NewSource(int64(seed)))
 	b := binary.LittleEndian
 	b1 := make([]byte, HashValueSize)
@@ -38,54 +42,21 @@ func NewMinhash(seed, size int) *Minhash {
 		fnv2.Write(b)
 		return fnv2.Sum64()
 	}
-	return &Minhash{minwise.NewMinWise(h1, h2, size)}
+	return &Minhash{minwise.NewMinWise(h1, h2, numHash)}
 }
 
+// Push a new value to the MinHash object.
+// The value should be serialized to byte slice.
 func (m *Minhash) Push(b []byte) {
 	m.mw.Push(b)
 }
 
-func (m1 *Minhash) Similarity(m2 *Minhash) float64 {
-	return m1.mw.Similarity(m2.mw)
-}
-
-func (m *Minhash) Cardinality() int {
-	return m.mw.Cardinality()
-}
-
-func (m *Minhash) Merge(m2 *Minhash) {
-	m.mw.Merge(m2.mw)
-}
-
+// Export the MinHash signature.
 func (m *Minhash) Signature() Signature {
 	return m.mw.Signature()
 }
 
-func (sig Signature) Cardinality() int {
-	sum := 0.0
-	for _, v := range sig {
-		sum += -math.Log(float64(math.MaxUint64-v) / float64(math.MaxUint64))
-	}
-	return int(float64(len(sig)-1) / sum)
-}
-
-func (sig Signature) Intersection(sig2 Signature) (count int) {
-	for i := range sig2 {
-		if sig[i] == sig2[i] {
-			count++
-		}
-	}
-	return
-}
-
-func (sig Signature) Merge(sig2 Signature) {
-	for i, v := range sig2 {
-		if v < sig[i] {
-			sig[i] = v
-		}
-	}
-}
-
+// Serialize the siganture into the byte buffer.
 func (sig Signature) Write(buffer []byte) {
 	offset := 0
 	for i := range sig {
@@ -94,6 +65,7 @@ func (sig Signature) Write(buffer []byte) {
 	}
 }
 
+// Deserialize the signature from the byte buffer.
 func (sig Signature) Read(buffer []byte) {
 	offset := 0
 	for i := range sig {
@@ -102,6 +74,7 @@ func (sig Signature) Read(buffer []byte) {
 	}
 }
 
+// Compute the serialized length in terms of number of bytes.
 func (sig Signature) ByteLen() int {
 	return len(sig) * HashValueSize
 }

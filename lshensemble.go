@@ -13,11 +13,13 @@ type param struct {
 	l int
 }
 
+// Partition represents a domain size partition in the LSH Ensemble index.
 type Partition struct {
 	Lower int `json:"lower"`
 	Upper int `json:"upper"`
 }
 
+// Lsh interface is implemented by LshForst and LshForestArray. 
 type Lsh interface {
 	// Add addes a new key into the index, it won't be searchable
 	// until the next time Index() is called since the add.
@@ -35,6 +37,7 @@ type Lsh interface {
 	OptimalKL(x, q int, t float64) (optK, optL int, fp, fn float64)
 }
 
+// LshEnsemble represents an LSH Ensemble index.
 type LshEnsemble struct {
 	Partitions []Partition
 	lshes      []Lsh
@@ -43,6 +46,9 @@ type LshEnsemble struct {
 	paramCache cmap.ConcurrentMap
 }
 
+// NewLshEnsemble initializes a new index consists of MinHash LSH implemented using LshForest.
+// numHash is the number of hash functions in MinHash.
+// maxK is the maximum value for the MinHash parameter K - the number of hash functions per "band". 
 func NewLshEnsemble(parts []Partition, numHash, maxK int) *LshEnsemble {
 	lshes := make([]Lsh, len(parts))
 	for i := range lshes {
@@ -57,6 +63,9 @@ func NewLshEnsemble(parts []Partition, numHash, maxK int) *LshEnsemble {
 	}
 }
 
+// NewLshEnsemblePlus initializes a new index consists of MinHash LSH implemented using LshForestArray.
+// numHash is the number of hash functions in MinHash.
+// maxK is the maximum value for the MinHash parameter K - the number of hash functions per "band". 
 func NewLshEnsemblePlus(parts []Partition, numHash, maxK int) *LshEnsemble {
 	lshes := make([]Lsh, len(parts))
 	for i := range lshes {
@@ -71,10 +80,13 @@ func NewLshEnsemblePlus(parts []Partition, numHash, maxK int) *LshEnsemble {
 	}
 }
 
+// Add a new domain to the index given its partition ID - the index of the partition.
+// The added domain won't be searchable until the Index() function is called.
 func (e *LshEnsemble) Add(key string, sig Signature, partInd int) {
 	e.lshes[partInd].Add(key, sig)
 }
 
+// Makes all added domains searchable.
 func (e *LshEnsemble) Index() {
 	var wg sync.WaitGroup
 	wg.Add(len(e.lshes))
@@ -87,7 +99,11 @@ func (e *LshEnsemble) Index() {
 	wg.Wait()
 }
 
-// Query returns the candidate attributes as well as the running time
+// Query returns the candidate domains as well as the running time.
+// This function is given the MinHash signature of the query domain, sig, the domain size,
+// and the containment threshold.
+// The query signature must be generated using the same seed as the signatures of the indexed domains,
+// and have the same number of hash functions.
 func (e *LshEnsemble) Query(sig Signature, size int, threshold float64) (result []string, dur time.Duration) {
 	// Compute the optimal k and l for each partition
 	params := make([]param, len(e.Partitions))

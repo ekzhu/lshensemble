@@ -51,7 +51,7 @@ func benchmark(minhashSize, dataSize int, t *testing.B) {
 	hashing(m1, a_start, a_end, d)
 	hashing(m2, b_start, b_end, d)
 
-	est := m1.Similarity(m2)
+	est := m1.mw.Similarity(m2.mw)
 	act := float64(a_end-b_start) / float64(b_end-a_start)
 	err := math.Abs(act - est)
 	fmt.Printf("Data size: %8d, ", dataSize)

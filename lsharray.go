@@ -5,12 +5,17 @@ import (
 	"sync"
 )
 
+// LshForestArray represents a MinHash LSH implemented using an array of LshForest.
+// It allows a wider range for the K and L parameters.
 type LshForestArray struct {
 	maxK    int
 	numHash int
 	array   []*LshForest
 }
 
+// Initialize with parameters:
+// maxK is the maximum value for the MinHash parameter K - the number of hash functions per "band". 
+// numHash is the number of hash functions in MinHash.
 func NewLshForestArray(maxK, numHash int) *LshForestArray {
 	array := make([]*LshForest, maxK)
 	for k := 1; k <= maxK; k++ {
@@ -23,6 +28,8 @@ func NewLshForestArray(maxK, numHash int) *LshForestArray {
 	}
 }
 
+// Add a key with MinHash signature into the index.
+// The key won't be searchable until Index() is called.
 func (a *LshForestArray) Add(key string, sig Signature) {
 	var wg sync.WaitGroup
 	wg.Add(len(a.array))
@@ -35,6 +42,7 @@ func (a *LshForestArray) Add(key string, sig Signature) {
 	wg.Wait()
 }
 
+// Makes all the keys added searchable.
 func (a *LshForestArray) Index() {
 	var wg sync.WaitGroup
 	wg.Add(len(a.array))
@@ -47,11 +55,13 @@ func (a *LshForestArray) Index() {
 	wg.Wait()
 }
 
-func (a *LshForestArray) Query(sig Signature, k, l int, out chan string) {
-	a.array[k-1].Query(sig, -1, l, out)
+// Return candidate keys given the query signature and parameters.
+func (a *LshForestArray) Query(sig Signature, K, L int, out chan string) {
+	a.array[K-1].Query(sig, -1, L, out)
 }
 
-// OptimalKL returns the optimal k and l for containment search
+// OptimalKL returns the optimal K and L for containment search,
+// and the false positive and negative probabilities.
 // where x is the indexed domain size, q is the query domain size,
 // and t is the containment threshold.
 func (a *LshForestArray) OptimalKL(x, q int, t float64) (optK, optL int, fp, fn float64) {
