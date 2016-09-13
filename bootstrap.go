@@ -1,6 +1,6 @@
 package lshensemble
 
-func bootstrap(index *LshEnsemble, totalNumDomains int, sortedDomains chan *Domain) {
+func bootstrap(index *LshEnsemble, totalNumDomains int, sortedDomains chan *DomainRecord) {
 	numPart := len(index.Partitions)
 	depth := totalNumDomains / numPart
 	var currDepth, currPart int
@@ -22,8 +22,8 @@ func bootstrap(index *LshEnsemble, totalNumDomains int, sortedDomains chan *Doma
 // numPart is the number of partitions to create.
 // numHash is the number of hash functions in MinHash.
 // maxK is the maximum value for the MinHash parameter K - the number of hash functions per "band". 
-// sortedDomains is a Domain channel emitting domains in sorted order by their sizes.
-func BootstrapLshEnsemble(numPart, numHash, maxK, totalNumDomains int, sortedDomains chan *Domain) *LshEnsemble {
+// sortedDomains is a DomainRecord channel emitting domains in sorted order by their sizes.
+func BootstrapLshEnsemble(numPart, numHash, maxK, totalNumDomains int, sortedDomains chan *DomainRecord) *LshEnsemble {
 	index := NewLshEnsemble(make([]Partition, numPart), numHash, maxK)
 	bootstrap(index, totalNumDomains, sortedDomains)
 	return index
@@ -34,16 +34,16 @@ func BootstrapLshEnsemble(numPart, numHash, maxK, totalNumDomains int, sortedDom
 // numPart is the number of partitions to create.
 // numHash is the number of hash functions in MinHash.
 // maxK is the maximum value for the MinHash parameter K - the number of hash functions per "band". 
-// sortedDomains is a Domain channel emitting domains in sorted order by their sizes.
-func BootstrapLshEnsemblePlus(numPart, numHash, maxK, totalNumDomains int, sortedDomains chan *Domain) *LshEnsemble {
+// sortedDomains is a DomainRecord channel emitting domains in sorted order by their sizes.
+func BootstrapLshEnsemblePlus(numPart, numHash, maxK, totalNumDomains int, sortedDomains chan *DomainRecord) *LshEnsemble {
 	index := NewLshEnsemblePlus(make([]Partition, numPart), numHash, maxK)
 	bootstrap(index, totalNumDomains, sortedDomains)
 	return index
 }
 
-// Recs2Chan is a utility function that converts a Domain slice in memory to a Domain channel.
-func Recs2Chan(recs []*Domain) chan *Domain {
-	c := make(chan *Domain, 1000)
+// Recs2Chan is a utility function that converts a DomainRecord slice in memory to a DomainRecord channel.
+func Recs2Chan(recs []*DomainRecord) chan *DomainRecord {
+	c := make(chan *DomainRecord, 1000)
 	go func() {
 		for _, r := range recs {
 			c <- r

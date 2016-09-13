@@ -13,6 +13,20 @@ Please cite this paper if you use this library in your work:
 
 ## Quick Start Guide
 
+Install this library using:
+
+```
+go get github.com/ekzhu/lshensemble
+```
+
+Import the library in your `import`:
+
+```go
+import (
+	github.com/ekzhu/lshensemble
+)
+```
+
 First you need to obtain the domains, and each domain should have a string ID.
 For simplicity we represent a domain as `[]string`.
 Assuming you have obtained the domains from some dataset,
@@ -27,7 +41,7 @@ keys []string
 // ...
 
 // initializing the domain records to hold the MinHash signatures
-domainRecords := make([]*Domain, len(domains))
+domainRecords := make([]*lshensemble.DomainRecord, len(domains))
 
 // set the minhash seed
 seed := 42
@@ -37,11 +51,11 @@ numHash := 256
 
 // create the domain records with the signatures
 for i := range domains {
-	mh := NewMinhash(seed, numHash)
+	mh := lshensemble.NewMinhash(seed, numHash)
 	for _, v := range domains[i] {
 		mh.Push([]byte(v))
 	}
-	domainRecords[i] := &Domain {
+	domainRecords[i] := &lshensemble.DomainRecord {
 		Key       : keys[i],
 		Size      : len(domains[i]),
 		Signature : mh.Signature()
@@ -54,7 +68,7 @@ their sizes. `BySize` wrapper allows the domains to tbe sorted using the build-i
 package.
 
 ```go
-sort.Sort(BySize(domainRecords))
+sort.Sort(lshensemble.BySize(domainRecords))
 ```
 
 Now you can use `BootstrapLshEnsemble` to create an LSH Ensemble index. You need to
@@ -71,16 +85,15 @@ numPart := 8
 maxK := 4
 
 // create index
-index := BootstrapLshEnsemble(numPart, numHash, maxK, len(domainRecords), 
-			      lshensemble.Recs2Chan(domainRecords))
+index := lshensemble.BootstrapLshEnsemble(numPart, numHash, maxK, len(domainRecords), lshensemble.Recs2Chan(domainRecords))
 ```
 
 For better memory efficiency when the number of domains is large, 
 it's wiser to use Golang channels and goroutines
 to pipeline the generation of the signatures, and use disk-based sorting to sort the domain records. 
-This is why `BootstrapLshEnsemble` accepts a channel of `*Domain` as input.
-For a small number of domains, you simply use `Recs2Chan` to convert the sorted slice of `*Domain`
-into a `chan *Domain`.
+This is why `BootstrapLshEnsemble` accepts a channel of `*DomainRecord` as input.
+For a small number of domains, you simply use `Recs2Chan` to convert the sorted slice of `*DomainRecord`
+into a `chan *DomainRecord`.
 
 To help serializing the domain records to disk, you can use `SerializeSignature`
 to serialize the signatures.

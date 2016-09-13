@@ -4,8 +4,8 @@ import (
 	"sort"
 )
 
-// Domain represents a domain record.
-type Domain struct {
+// DomainRecord represents a domain record.
+type DomainRecord struct {
 	// The unique key of this domain.
 	Key        string
 	// The domain size.
@@ -15,14 +15,14 @@ type Domain struct {
 }
 
 // A wrapper for sorting domains.
-type BySize []*Domain
+type BySize []*DomainRecord
 
 func (rs BySize) Len() int           { return len(rs) }
 func (rs BySize) Less(i, j int) bool { return rs[i].Size < rs[j].Size }
 func (rs BySize) Swap(i, j int)      { rs[i], rs[j] = rs[j], rs[i] }
 
 // Returns a subset of the domains given the size lower bound and upper bound.
-func (rs BySize) Subset(lower, upper int) []*Domain {
+func (rs BySize) Subset(lower, upper int) []*DomainRecord {
 	if !sort.IsSorted(rs) {
 		panic("Must be sorted by domain size first")
 	}
@@ -42,5 +42,5 @@ func (rs BySize) Subset(lower, upper int) []*Domain {
 	if end == len(rs)-1 {
 		end++
 	}
-	return []*Domain(rs[start:end])
+	return []*DomainRecord(rs[start:end])
 }
