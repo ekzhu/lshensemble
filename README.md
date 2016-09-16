@@ -13,7 +13,7 @@ Please cite this paper if you use this library in your work:
 
 ## Quick Start Guide
 
-Install this library using:
+Install this library by running:
 
 ```
 go get github.com/ekzhu/lshensemble
@@ -23,18 +23,18 @@ Import the library in your `import`:
 
 ```go
 import (
-	github.com/ekzhu/lshensemble
+	"github.com/ekzhu/lshensemble"
 )
 ```
 
 First you need to obtain the domains, and each domain should have a string ID.
-For simplicity we represent a domain as `[]string`.
+For simplicity we represent a domain as `[]string`, which must contain only distinct values.
 Assuming you have obtained the domains from some dataset,
 you can generate the MinHash signatures from the domains.
 
 ```go
 domains [][]string
-keys []string
+keys []string // each key corresponds to the domain at the same index
 
 // ... 
 // obtaining domains and keys
@@ -71,10 +71,14 @@ package.
 sort.Sort(lshensemble.BySize(domainRecords))
 ```
 
-Now you can use `BootstrapLshEnsemble` to create an LSH Ensemble index. You need to
+Now you can use `BootstrapLshEnsemble` 
+(or `BootstrapLshEnsemblePlus` for better accuracy at higher memory cost\*) 
+to create an LSH Ensemble index. You need to
 specify the number of partitions to use and some other parameters.
 The LSH parameter K (number of hash functions per band) is dynamically tuned at query-time,
-but the maximum value needs to be specified here.
+but the maximum value should be specified here.
+
+\* See [documentation](https://godoc.org/github.com/ekzhu/lshensemble) for the difference.
 
 ```go
 // set the number of partitions
@@ -84,17 +88,16 @@ numPart := 8
 // (number of hash functions per band).
 maxK := 4
 
-// create index
+// create index, you can also use BootstrapLshEnsemblePlus for better accuracy
 index := lshensemble.BootstrapLshEnsemble(numPart, numHash, maxK, len(domainRecords), lshensemble.Recs2Chan(domainRecords))
 ```
 
 For better memory efficiency when the number of domains is large, 
 it's wiser to use Golang channels and goroutines
-to pipeline the generation of the signatures, and use disk-based sorting to sort the domain records. 
+to pipeline the generation of the signatures, and then use disk-based sorting to sort the domain records. 
 This is why `BootstrapLshEnsemble` accepts a channel of `*DomainRecord` as input.
 For a small number of domains, you simply use `Recs2Chan` to convert the sorted slice of `*DomainRecord`
 into a `chan *DomainRecord`.
-
 To help serializing the domain records to disk, you can use `SerializeSignature`
 to serialize the signatures.
 You need to come up with your own serialization schema for the keys and sizes.
@@ -105,7 +108,7 @@ threshold. Therefore, you can optionally include a post-processing step to remov
 the false positive domains using the original domain values.
 
 ```go
-// pick a domain as query
+// pick a domain to use as the query
 querySig := domainRecords[0].Signature
 querySize := domainRecords[0].Size
 
@@ -117,7 +120,7 @@ threshold := 0.5
 results, dur := index.Query(querySig, querySize, threshold)
 
 // ...
-// You may want to include a post processing step here to remove 
+// You may want to include a post-processing step here to remove 
 // false positive domains using the actual domain values.
 // ...
 ```
