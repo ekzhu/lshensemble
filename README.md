@@ -11,6 +11,24 @@ Please cite this paper if you use this library in your work:
 
 [Presentation slides](http://www.cs.toronto.edu/~ekzhu/talks/lshensemble-vldb2016.pdf) @ VLDB 2016, New Delhi.
 
+## Datasets
+
+We used two datasets for evaluation. The datasets are all from public domains
+and can be downloaded directly from the original publisher.
+
+* [Canadian Open Data, tabular domains only (as of June 2015)](https://dl.dropboxusercontent.com/u/7441455/canadian_open_data_tabular_domains_only.tar.gz):
+Each file corresponds to a single domain extracted from a column of
+a table, which could be a spreadsheet or an CSV file. 
+The filenames follow the `<data file name>.<column id>` format.
+* [2015 WDC Web Tables, English Relational, 51 compressed files](http://data.dws.informatik.uni-mannheim.de/webtables/2015-07/englishCorpus/compressed):
+See the data format [here](http://webdatacommons.org/webtables/2015/downloadInstructions.html).
+
+By using these datasets you agree to use them for academic research purpose
+only, and we shall not be held responisble for any 
+inaccuracy or error that may exist in the 
+datasets, nor we shall be responsible for any consequence of usage of these
+datasets.
+
 ## Quick Start Guide
 
 Install this library by running:
