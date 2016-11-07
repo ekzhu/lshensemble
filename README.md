@@ -146,7 +146,11 @@ results, dur := index.Query(querySig, querySize, threshold)
 ## Run Canadian Open Data Benchmark
 
 First you need to download the [Canadian Open Data domains](https://github.com/ekzhu/lshensemble#datasets)
-and extract the domain files into a directory called `_cod_domains`.
+and extract the domain files into a directory called `_cod_domains` by running the following command.
+
+```
+tar xzf canadian_open_data_tabular_domains_only.tar.gz
+```
 
 Use Golang's `test` tool to start the benchmark:
 
