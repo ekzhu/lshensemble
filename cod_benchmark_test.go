@@ -27,7 +27,7 @@ func Benchmark_CanadianOpenData(b *testing.B) {
 	rawDomains := make([]rawDomain, 0)
 	var count int
 	fmt.Println()
-	for domain := range readDomains("_cod_domains_small") {
+	for domain := range readDomains("_cod_domains") {
 		// Ignore domaisn with less than 10 values
 		if len(domain.values) < minDomainSize {
 			continue
