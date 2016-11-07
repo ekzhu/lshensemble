@@ -46,12 +46,12 @@ import (
 ```
 
 First you need to obtain the domains, and each domain should have a string ID.
-For simplicity we represent a domain as `[]string`, which must contain only distinct values.
+For simplicity we represent a domain as `map[string]bool`, whose keys are distinct values.
 Assuming you have obtained the domains from some dataset,
 you can generate the MinHash signatures from the domains.
 
 ```go
-domains [][]string
+domains [](map[string]bool)
 keys []string // each key corresponds to the domain at the same index
 
 // ... 
@@ -70,7 +70,7 @@ numHash := 256
 // create the domain records with the signatures
 for i := range domains {
 	mh := lshensemble.NewMinhash(seed, numHash)
-	for _, v := range domains[i] {
+	for v := range domains[i] {
 		mh.Push([]byte(v))
 	}
 	domainRecords[i] := &lshensemble.DomainRecord {
@@ -142,3 +142,21 @@ results, dur := index.Query(querySig, querySize, threshold)
 // false positive domains using the actual domain values.
 // ...
 ```
+
+## Run Canadian Open Data Benchmark
+
+First you need to download the [Canadian Open Data domains](https://github.com/ekzhu/lshensemble#datasets)
+and extract the domain files into a directory called `_cod_domains`.
+
+Use Golang's `test` tool to start the benchmark:
+
+```
+go test -bench=Benchmark_CanadianOpenData -timeout=24h
+```
+
+The benchmark process is in the following order:
+
+1. Read the domain files into memory
+2. Run Linear Scan to get the ground truth
+3. Run LSH Ensemble to get the query results
+4. Run the accuracy analysis to generate a report on precisions and recalls
