@@ -96,7 +96,7 @@ specify the number of partitions to use and some other parameters.
 The LSH parameter K (number of hash functions per band) is dynamically tuned at query-time,
 but the maximum value should be specified here.
 
-\* See [documentation](https://godoc.org/github.com/ekzhu/lshensemble) for the difference.
+\* See [explanation](#maxk-explanation) for the difference.
 
 ```go
 // set the number of partitions
@@ -164,3 +164,58 @@ The benchmark process is in the following order:
 2. Run Linear Scan to get the ground truth
 3. Run LSH Ensemble to get the query results
 4. Run the accuracy analysis to generate a report on precisions and recalls
+
+## <a name="maxk-explanation"></a>Explanation for the Parameter `MaxK` and Bootstrap Options
+
+MinHash LSH has two parameters `K` and `L` (in the 
+[paper](http://www.vldb.org/pvldb/vol9/p1185-zhu.pdf)
+I used `r` and `b` respectively). 
+`L` is the number of "bands" and `K` is the number of hash functions per band. 
+The details about the two parameters can be found in
+Chapter 3 of the textbook,
+[Mining of Massive Datasets](http://infolab.stanford.edu/~ullman/mmds/book.pdf).
+
+In LSH Ensemble, we want to allow the `K` and `L` of the LSH index in every partition to
+vary at query time, in order to optimize them for any given query 
+(see Section 5.5 of the paper).
+We can use achive this by using multiple MinHash LSH, one for each value of `K`.
+This allows us to vary the parameter `K` and `L` in the following space:
+```
+K * L <= number of hash functions (let this be H)
+1 <= K <= H
+```
+However, this means that for every possible value of `K` from 1 to `H`, 
+we need to create a MinHash LSH -- very expensive.
+So it is not wise to allow `K` to vary from 1 to `H`, 
+and that's why we have a `MaxK` parameter, which bounds `K` and saves memory. 
+So the new parameter space is:
+```
+K * L <= H
+1 <= K <= MaxK
+```
+It is important to note that it is not the case for `L`, 
+because we can choose how many "bands" to use at query time.
+
+Now, if we use [LSH Forest](http://ilpubs.stanford.edu:8090/678/1/2005-14.pdf),
+we can vary the parameter `K` from 1 to `MaxK` at query time with just one LSH. 
+You can read the paper to understand how this can be done 
+(hint: prefix tree). 
+This comes at a price -- the parameter space is more restricted:
+```
+MaxK * L <= H
+1 <= K <= MaxK
+```
+Essentially, we have less freedom in varying `L`, as 
+`1 <= L <= min{H / MaxK, H}` base on the above constraints.
+
+In this library for LSH Ensemble, we provide both implmentations 
+(LSH Forest and "vanilla" MinHash LSH ).
+Specifically, 
+* `BootstrapLshEnsemble` builds the index using the LSH Forest implementation, 
+which use less memory but with a more restricted parameter space for optimization.
+* `BootstrapLshEnsemblePlus` builds the index using the "vanilla" MinHash LSH
+implementation (one LSH for every `K`), which uses more memory (bounded by `MaxK`)
+but with no restriction on `L`.
+
+We found that the optimal `K` for most queries are less than 4. So in practice you
+can just set `MaxK` to 4.
