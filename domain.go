@@ -4,6 +4,26 @@ import (
 	"sort"
 )
 
+type Set struct {
+	Data map[string]bool
+}
+
+func NewSet() *Set {
+	return &Set{
+		Data : make(map[string]bool),
+	}
+}
+
+// Add new element to the set
+func (s *Set) Add(t string) {
+	s.Data[t] = true
+}
+
+// len()
+func (s *Set) Len() int {
+	return len(s.Data)
+}
+
 // DomainRecord represents a domain record.
 type DomainRecord struct {
 	// The unique key of this domain.
