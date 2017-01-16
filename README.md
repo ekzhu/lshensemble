@@ -51,7 +51,7 @@ Assuming you have obtained the domains from some dataset,
 you can generate the MinHash signatures from the domains.
 
 ```go
-domains []*lshensemble.Set
+domains []map[string]bool
 keys []string // each key corresponds to the domain at the same index
 
 // ... 
@@ -70,7 +70,7 @@ numHash := 256
 // create the domain records with the signatures
 for i := range domains {
 	mh := lshensemble.NewMinhash(seed, numHash)
-	for v := range domains[i].Data {
+	for v := range domains[i] {
 		mh.Push([]byte(v))
 	}
 	domainRecords[i] := &lshensemble.DomainRecord {
