@@ -35,7 +35,7 @@ func benchmark_lshensemble(rawDomains []rawDomain, rawQueries []rawDomain, thres
 	results := make(chan queryResult)
 	go func() {
 		for _, query := range queries {
-			r, d := index.Query(query.Signature, query.Size, threshold)
+			r, d := index.QueryTimed(query.Signature, query.Size, threshold)
 			results <- queryResult{
 				queryKey:   query.Key,
 				duration:   d,

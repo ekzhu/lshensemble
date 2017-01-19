@@ -120,10 +120,14 @@ To help serializing the domain records to disk, you can use `SerializeSignature`
 to serialize the signatures.
 You need to come up with your own serialization schema for the keys and sizes.
 
-Lastly, you can query the index using `Query` function. The index returns the *candidates*
-domains, which may contains false positives - domains that do not meet the containment
+Lastly, you can query the index using `QueryTimed` function. The index returns the keys of the 
+*candidates* domains, which may contains false positives - domains that do not meet the containment
 threshold. Therefore, you can optionally include a post-processing step to remove
 the false positive domains using the original domain values.
+
+You can also use `Query` function, which is similar to `QueryTimed` but returns a Golang channel
+for the keys. This can be useful when you want to process the results incrementally.
+See [documentation](https://godoc.org/github.com/ekzhu/lshensemble#LshEnsemble.Query) for details.
 
 ```go
 // pick a domain to use as the query
@@ -135,7 +139,7 @@ threshold := 0.5
 
 // get the keys of the candidate domains (may contain false positives),
 // and the running time. 
-results, dur := index.Query(querySig, querySize, threshold)
+results, dur := index.QueryTimed(querySig, querySize, threshold)
 
 // ...
 // You may want to include a post-processing step here to remove 
