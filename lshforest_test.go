@@ -49,8 +49,10 @@ func Test_LshForest(t *testing.T) {
 	}
 
 	keys := make(chan string)
+	done := make(chan struct{})
+	defer close(done)
 	go func() {
-		f.Query(sig3, 1, 4, keys)
+		f.Query(sig3, 1, 4, keys, done)
 		close(keys)
 	}()
 	found := 0

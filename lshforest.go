@@ -136,7 +136,7 @@ func (f *LshForest) Index() {
 }
 
 // Return candidate keys given the query signature and parameters.
-func (f *LshForest) Query(sig Signature, K, L int, out chan string) {
+func (f *LshForest) Query(sig Signature, K, L int, out chan<- string, done <-chan struct{}) {
 	if K == -1 {
 		K = f.k
 	}
@@ -155,17 +155,21 @@ func (f *LshForest) Query(sig Signature, K, L int, out chan string) {
 	wg.Add(L)
 	for i := 0; i < L; i++ {
 		go func(ht hashTable, hk string) {
+			defer wg.Done()
 			k := sort.Search(len(ht), func(x int) bool {
 				return ht[x].hashKey[:prefixSize] >= hk
 			})
 			if k < len(ht) && ht[k].hashKey[:prefixSize] == hk {
 				for j := k; j < len(ht) && ht[j].hashKey[:prefixSize] == hk; j++ {
 					for _, key := range ht[j].keys {
-						keyChan <- key
+						select {
+						case keyChan <- key:
+						case <-done:
+							return
+						}
 					}
 				}
 			}
-			wg.Done()
 		}(f.hashTables[i], Hs[i])
 	}
 	go func() {

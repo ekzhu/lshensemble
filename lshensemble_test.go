@@ -38,9 +38,12 @@ func Test_LshEnsemble(t *testing.T) {
 	querySize := domainRecords[0].Size
 	threshold := 0.9
 	var found bool
-	for key := range index.Query(querySig, querySize, threshold) {
+	done := make(chan struct{})
+	defer close(done)
+	for key := range index.Query(querySig, querySize, threshold, done) {
 		if key == "1" {
 			found = true
+			break
 		}
 	}
 	if !found {

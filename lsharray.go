@@ -14,7 +14,7 @@ type LshForestArray struct {
 }
 
 // Initialize with parameters:
-// maxK is the maximum value for the MinHash parameter K - the number of hash functions per "band". 
+// maxK is the maximum value for the MinHash parameter K - the number of hash functions per "band".
 // numHash is the number of hash functions in MinHash.
 func NewLshForestArray(maxK, numHash int) *LshForestArray {
 	array := make([]*LshForest, maxK)
@@ -56,8 +56,8 @@ func (a *LshForestArray) Index() {
 }
 
 // Return candidate keys given the query signature and parameters.
-func (a *LshForestArray) Query(sig Signature, K, L int, out chan string) {
-	a.array[K-1].Query(sig, -1, L, out)
+func (a *LshForestArray) Query(sig Signature, K, L int, out chan<- string, done <-chan struct{}) {
+	a.array[K-1].Query(sig, -1, L, out, done)
 }
 
 // OptimalKL returns the optimal K and L for containment search,

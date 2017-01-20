@@ -29,7 +29,8 @@ type Lsh interface {
 	// Query searches the index given a minhash signature, and
 	// the LSH parameters k and l. Result keys will be written to
 	// the channel out.
-	Query(sig Signature, k, l int, out chan string)
+	// Closing channel done will cancels the query execution.
+	Query(sig Signature, k, l int, out chan<- string, done <-chan struct{})
 	// OptimalKL computes the optimal LSH parameters k and l given
 	// x, the index domain size, q, the query domain size, and t,
 	// the containment threshold. The resulting false positive (fp)
@@ -101,12 +102,13 @@ func (e *LshEnsemble) Index() {
 
 // Query returns the candidate domain keys in a channel.
 // This function is given the MinHash signature of the query domain, sig, the domain size,
-// and the containment threshold.
+// the containment threshold, and a cancellation channel.
+// Closing channel done will cancel the query execution.
 // The query signature must be generated using the same seed as the signatures of the indexed domains,
 // and have the same number of hash functions.
-func (e *LshEnsemble) Query(sig Signature, size int, threshold float64) chan string {
+func (e *LshEnsemble) Query(sig Signature, size int, threshold float64, done <-chan struct{}) <-chan string {
 	params := e.computeParams(size, threshold)
-	return e.queryWithParam(sig, params)
+	return e.queryWithParam(sig, params, done)
 }
 
 // Similar to Query, QueryTimed returns the candidate domain keys in a slice as well as the running time.
@@ -114,22 +116,24 @@ func (e *LshEnsemble) QueryTimed(sig Signature, size int, threshold float64) (re
 	// Compute the optimal k and l for each partition
 	params := e.computeParams(size, threshold)
 	result = make([]string, 0)
+	done := make(chan struct{})
+	defer close(done)
 	start := time.Now()
-	for key := range e.queryWithParam(sig, params) {
+	for key := range e.queryWithParam(sig, params, done) {
 		result = append(result, key)
 	}
 	dur = time.Since(start)
 	return result, dur
 }
 
-func (e *LshEnsemble) queryWithParam(sig Signature, params []param) chan string {
+func (e *LshEnsemble) queryWithParam(sig Signature, params []param, done <-chan struct{}) <-chan string {
 	// Collect candidates from all partitions
 	keyChan := make(chan string)
 	var wg sync.WaitGroup
 	wg.Add(len(e.lshes))
 	for i := range e.lshes {
 		go func(lsh Lsh, k, l int) {
-			lsh.Query(sig, k, l, keyChan)
+			lsh.Query(sig, k, l, keyChan, done)
 			wg.Done()
 		}(e.lshes[i], params[i].k, params[i].l)
 	}
