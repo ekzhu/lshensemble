@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/streamrail/concurrent-map"
+	"github.com/orcaman/concurrent-map"
 )
 
 type param struct {
