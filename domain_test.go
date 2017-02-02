@@ -22,6 +22,7 @@ func Test_Serialization(t *testing.T) {
 		t.Error(err)
 	}
 	t.Log("Number of bytes written to buffer", n)
+	t.Log(record)
 
 	var record2 DomainRecord
 	n, err = record2.Read(&data, 4, func(b []byte) (string, error) {
@@ -34,5 +35,10 @@ func Test_Serialization(t *testing.T) {
 	t.Log(record2)
 	if record2.Key != record.Key || record2.Size != record.Size {
 		t.Error("Incorrect record after deserialization")
+	}
+	for i := range record.Signature {
+		if record.Signature[i] != record2.Signature[i] {
+			t.Error("Signature does not match after serialization")
+		}
 	}
 }
