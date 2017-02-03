@@ -23,7 +23,7 @@ type Signature []uint64
 // hash functions.
 func NewMinhash(seed, numHash int) *Minhash {
 	r := rand.New(rand.NewSource(int64(seed)))
-	b := binary.LittleEndian
+	b := binary.BigEndian
 	b1 := make([]byte, HashValueSize)
 	b2 := make([]byte, HashValueSize)
 	b.PutUint64(b1, uint64(r.Int63()))
@@ -60,7 +60,7 @@ func (m *Minhash) Signature() Signature {
 func (sig Signature) Write(buffer []byte) {
 	offset := 0
 	for i := range sig {
-		binary.LittleEndian.PutUint64(buffer[offset:], sig[i])
+		binary.BigEndian.PutUint64(buffer[offset:], sig[i])
 		offset += HashValueSize
 	}
 }
@@ -69,7 +69,7 @@ func (sig Signature) Write(buffer []byte) {
 func (sig Signature) Read(buffer []byte) {
 	offset := 0
 	for i := range sig {
-		sig[i] = binary.LittleEndian.Uint64(buffer[offset:])
+		sig[i] = binary.BigEndian.Uint64(buffer[offset:])
 		offset += HashValueSize
 	}
 }
