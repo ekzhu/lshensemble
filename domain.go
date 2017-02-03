@@ -2,6 +2,7 @@ package lshensemble
 
 import (
 	"encoding/binary"
+	"errors"
 	"io"
 	"sort"
 )
@@ -79,6 +80,9 @@ func (r *DomainRecord) Read(reader io.Reader, keySize int, keyFn func([]byte) (s
 	n, err := reader.Read(keyBin)
 	if err != nil {
 		return n, err
+	}
+	if n != keySize {
+		return n, errors.New("Failed to read expected number of bytes for key")
 	}
 	key, err := keyFn(keyBin)
 	if err != nil {
