@@ -31,8 +31,11 @@ func Test_LshEnsemble(t *testing.T) {
 		})
 	}
 	sort.Sort(BySize(domainRecords))
-	index := BootstrapLshEnsemble(4, 128, 4, len(domainRecords),
+	index, err := BootstrapLshEnsemble(4, 128, 4, len(domainRecords),
 		Recs2Chan(domainRecords))
+	if err != nil {
+		t.Error(err)
+	}
 
 	querySig := domainRecords[0].Signature
 	querySize := domainRecords[0].Size

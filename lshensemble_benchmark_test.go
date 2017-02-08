@@ -27,7 +27,7 @@ func benchmark_lshensemble(rawDomains []rawDomain, rawQueries []rawDomain, thres
 	// Indexing
 	log.Print("Start building LSH Ensemble index")
 	sort.Sort(BySize(domainRecords))
-	index := BootstrapLshEnsemblePlus(numPart, numHash, maxK, len(domainRecords),
+	index, _ := BootstrapLshEnsemblePlus(numPart, numHash, maxK, len(domainRecords),
 		Recs2Chan(domainRecords))
 	log.Print("Finished building LSH Ensemble index")
 	// Querying

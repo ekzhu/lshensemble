@@ -107,7 +107,10 @@ numPart := 8
 maxK := 4
 
 // create index, you can also use BootstrapLshEnsemblePlus for better accuracy
-index := lshensemble.BootstrapLshEnsemble(numPart, numHash, maxK, len(domainRecords), lshensemble.Recs2Chan(domainRecords))
+index, err := lshensemble.BootstrapLshEnsemble(numPart, numHash, maxK, len(domainRecords), lshensemble.Recs2Chan(domainRecords))
+if err != nil {
+	panic(err)
+}
 ```
 
 For better memory efficiency when the number of domains is large, 
