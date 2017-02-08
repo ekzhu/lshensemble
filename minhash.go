@@ -3,6 +3,7 @@ package lshensemble
 import (
 	"encoding/binary"
 	"hash/fnv"
+	"io"
 	"math/rand"
 
 	minwise "github.com/dgryski/go-minhash"
@@ -56,41 +57,27 @@ func (m *Minhash) Signature() Signature {
 	return m.mw.Signature()
 }
 
-// Serialize the siganture into the byte buffer.
-func (sig Signature) Write(buffer []byte) {
-	offset := 0
+// Serialize the siganture into the writer.
+func (sig Signature) Write(w io.Writer) error {
 	for i := range sig {
-		binary.BigEndian.PutUint64(buffer[offset:], sig[i])
-		offset += HashValueSize
+		if err := binary.Write(w, binary.BigEndian, sig[i]); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
-// Deserialize the signature from the byte buffer.
-func (sig Signature) Read(buffer []byte) {
-	offset := 0
+// Deserialize the signature from the reader.
+func (sig Signature) Read(r io.Reader) error {
 	for i := range sig {
-		sig[i] = binary.BigEndian.Uint64(buffer[offset:])
-		offset += HashValueSize
+		if err := binary.Read(r, binary.BigEndian, &(sig[i])); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // Compute the serialized length in terms of number of bytes.
 func (sig Signature) ByteLen() int {
 	return len(sig) * HashValueSize
-}
-
-func SerializeSignature(sig Signature) []byte {
-	buffer := make([]byte, sig.ByteLen())
-	sig.Write(buffer)
-	return buffer
-}
-
-func DeserializeSignature(buffer []byte) Signature {
-	if len(buffer)%HashValueSize != 0 {
-		panic("Incorrect length of buffer")
-	}
-	size := len(buffer) / HashValueSize
-	sig := make(Signature, size)
-	sig.Read(buffer)
-	return sig
 }

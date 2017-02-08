@@ -9,14 +9,6 @@ import (
 func TestMinhash(t *testing.T) {
 	m := NewMinhash(1, 256)
 	m.Push([]byte("Test some input"))
-	sig := m.Signature()
-	buf := SerializeSignature(sig)
-	sig2 := DeserializeSignature(buf)
-	for i, v := range sig {
-		if v != sig2[i] {
-			t.Fail()
-		}
-	}
 }
 
 func data(size int) [][]byte {
