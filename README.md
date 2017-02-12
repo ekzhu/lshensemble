@@ -1,6 +1,9 @@
 # LSH Ensemble
 
 [![Build Status](https://travis-ci.org/ekzhu/lshensemble.svg?branch=master)](https://travis-ci.org/ekzhu/lshensemble)
+[![GoDoc](https://godoc.org/github.com/ekzhu/lshensemble?status.svg)](https://godoc.org/github.com/ekzhu/lshensemble)
+[![DOI](https://zenodo.org/badge/68092131.svg)](https://zenodo.org/badge/latestdoi/68092131)
+
 
 [Documentation](https://godoc.org/github.com/ekzhu/lshensemble)
 
