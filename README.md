@@ -19,7 +19,7 @@ Please cite this paper if you use this library in your work:
 We used two datasets for evaluation. The datasets are all from public domains
 and can be downloaded directly from the original publisher.
 
-* [Canadian Open Data, tabular domains only (as of June 2015)](https://dl.dropboxusercontent.com/u/7441455/lshensemble/canadian_open_data_tabular_domains_only.tar.gz):
+* [Canadian Open Data, tabular domains only (as of June 2015)](https://www.dropbox.com/s/a9qbgloyvhrnrgu/canadian_open_data_tabular_domains_only.tar.gz?dl=0):
 Each file corresponds to a single domain extracted from a column of
 a table, which could be a spreadsheet or an CSV file. 
 The filenames follow the `<data file name>.<column id>` format.
