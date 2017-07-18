@@ -10,7 +10,7 @@ const (
 	integrationPrecision = 0.01
 )
 
-// Default constructor uses 32 bit hash value
+// NewLshForest default constructor uses 32 bit hash value
 var NewLshForest = NewLshForest32
 
 type keys []string
@@ -86,7 +86,7 @@ func NewLshForest16(k, l int) *LshForest {
 
 // Add a key with MinHash signature into the index.
 // The key won't be searchable until Index() is called.
-func (f *LshForest) Add(key string, sig Signature) {
+func (f *LshForest) Add(key string, sig []uint64) {
 	// Generate hash keys
 	Hs := make([]string, f.l)
 	for i := 0; i < f.l; i++ {
@@ -109,7 +109,7 @@ func (f *LshForest) Add(key string, sig Signature) {
 	wg.Wait()
 }
 
-// Makes all the keys added searchable.
+// Index makes all the keys added searchable.
 func (f *LshForest) Index() {
 	var wg sync.WaitGroup
 	wg.Add(len(f.hashTables))
@@ -135,8 +135,8 @@ func (f *LshForest) Index() {
 	wg.Wait()
 }
 
-// Return candidate keys given the query signature and parameters.
-func (f *LshForest) Query(sig Signature, K, L int, out chan<- string, done <-chan struct{}) {
+// Query returns candidate keys given the query signature and parameters.
+func (f *LshForest) Query(sig []uint64, K, L int, out chan<- string, done <-chan struct{}) {
 	if K == -1 {
 		K = f.k
 	}

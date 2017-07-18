@@ -1,29 +1,26 @@
 package lshensemble
 
 import (
+	"bytes"
 	"encoding/binary"
 	"hash/fnv"
-	"io"
 	"math/rand"
 
 	minwise "github.com/dgryski/go-minhash"
 )
 
-// The number of byte in a hash value for Minhash
+// HashValueSize is 8, the number of byte used for each hash value
 const HashValueSize = 8
 
-// Represents a MinHash object
+// Minhash represents a MinHash object
 type Minhash struct {
 	mw *minwise.MinWise
 }
 
-// Represents a MinHash signature - an array of hash values
-type Signature []uint64
-
-// Initialize a MinHash object with a seed and the number of
+// NewMinhash initializes a MinHash object with a seed and the number of
 // hash functions.
-func NewMinhash(seed, numHash int) *Minhash {
-	r := rand.New(rand.NewSource(int64(seed)))
+func NewMinhash(seed int64, numHash int) *Minhash {
+	r := rand.New(rand.NewSource(seed))
 	b := binary.BigEndian
 	b1 := make([]byte, HashValueSize)
 	b2 := make([]byte, HashValueSize)
@@ -52,32 +49,31 @@ func (m *Minhash) Push(b []byte) {
 	m.mw.Push(b)
 }
 
-// Export the MinHash signature.
-func (m *Minhash) Signature() Signature {
+// Signature exports the MinHash signature.
+func (m *Minhash) Signature() []uint64 {
 	return m.mw.Signature()
 }
 
-// Serialize the siganture into the writer.
-func (sig Signature) Write(w io.Writer) error {
-	for i := range sig {
-		if err := binary.Write(w, binary.BigEndian, sig[i]); err != nil {
-			return err
-		}
+// SigToBytes serializes the signature into byte slice
+func SigToBytes(sig []uint64) []byte {
+	buf := new(bytes.Buffer)
+	for _, v := range sig {
+		binary.Write(buf, binary.BigEndian, v)
 	}
-	return nil
+	return buf.Bytes()
 }
 
-// Deserialize the signature from the reader.
-func (sig Signature) Read(r io.Reader) error {
+// BytesToSig converts a byte slice into a signature
+func BytesToSig(data []byte) ([]uint64, error) {
+	size := len(data) / HashValueSize
+	sig := make([]uint64, size)
+	buf := bytes.NewReader(data)
+	var v uint64
 	for i := range sig {
-		if err := binary.Read(r, binary.BigEndian, &(sig[i])); err != nil {
-			return err
+		if err := binary.Read(buf, binary.BigEndian, &v); err != nil {
+			return nil, err
 		}
+		sig[i] = v
 	}
-	return nil
-}
-
-// Compute the serialized length in terms of number of bytes.
-func (sig Signature) ByteLen() int {
-	return len(sig) * HashValueSize
+	return sig, nil
 }

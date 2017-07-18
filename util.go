@@ -4,10 +4,10 @@ import (
 	"encoding/binary"
 )
 
-type hashKeyFunc func(Signature) string
+type hashKeyFunc func([]uint64) string
 
 func hashKeyFuncGen(hashValueSize int) hashKeyFunc {
-	return func(sig Signature) string {
+	return func(sig []uint64) string {
 		s := make([]byte, hashValueSize*len(sig))
 		buf := make([]byte, 8)
 		for i, v := range sig {

@@ -6,7 +6,7 @@ import (
 )
 
 func Benchmark_LshForest_Insert10000(b *testing.B) {
-	sigs := make([]Signature, 10000)
+	sigs := make([][]uint64, 10000)
 	for i := range sigs {
 		sigs[i] = randomSignature(64, int64(i))
 	}
