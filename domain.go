@@ -7,7 +7,7 @@ import (
 // DomainRecord represents a domain record.
 type DomainRecord struct {
 	// The unique key of this domain.
-	Key string
+	Key interface{}
 	// The domain size.
 	Size int
 	// The MinHash signature of this domain.

@@ -48,7 +48,7 @@ func Test_LshForest(t *testing.T) {
 		}
 	}
 
-	keys := make(chan string)
+	keys := make(chan interface{})
 	done := make(chan struct{})
 	defer close(done)
 	go func() {

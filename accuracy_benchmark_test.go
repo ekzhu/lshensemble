@@ -32,7 +32,7 @@ func benchmark_accuracy(groundTruthFilename, queryResultFilename, outputFilename
 	out.Write([]string{"Query", "Precision", "Recall"})
 	for i := range queryResults {
 		line := []string{
-			queryResults[i].queryKey,
+			queryResults[i].queryKey.(string),
 			strconv.FormatFloat(precisions[i], 'f', -1, 64),
 			strconv.FormatFloat(recalls[i], 'f', -1, 64),
 		}
@@ -50,11 +50,11 @@ func recallPrecision(result, groundTruth queryResult) (recall, precision float64
 	if len(result.candidates) == 0 {
 		return 0.0, 0.0
 	}
-	truth := make(map[string]bool)
+	truth := make(map[interface{}]bool)
 	for _, v := range groundTruth.candidates {
 		truth[v] = true
 	}
-	test := make(map[string]bool)
+	test := make(map[interface{}]bool)
 	for _, v := range result.candidates {
 		test[v] = true
 	}
@@ -85,7 +85,10 @@ func readQueryResultFile(queryResultFile string) []queryResult {
 	for scanner.Scan() {
 		raw := strings.Split(scanner.Text(), "\t")
 		key := raw[0]
-		candidates := raw[2:]
+		candidates := make([]interface{}, len(raw[2:]))
+		for i := range candidates {
+			candidates[i] = raw[2+i]
+		}
 		dur, err := time.ParseDuration(raw[1])
 		if err != nil {
 			panic(err)

@@ -11,7 +11,7 @@ func benchmark_linearscan(rawDomains []rawDomain, queries []rawDomain, threshold
 	go func() {
 		for _, query := range queries {
 			start := time.Now()
-			r := make([]string, 0)
+			r := make([]interface{}, 0)
 			for _, domain := range rawDomains {
 				c := computeExactContainment(query.values, domain.values)
 				if c < threshold {

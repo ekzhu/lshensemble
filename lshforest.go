@@ -13,7 +13,7 @@ const (
 // NewLshForest default constructor uses 32 bit hash value
 var NewLshForest = NewLshForest32
 
-type keys []string
+type keys []interface{}
 
 // For initial bootstrapping
 type initHashTable map[string]keys
@@ -86,7 +86,7 @@ func NewLshForest16(k, l int) *LshForest {
 
 // Add a key with MinHash signature into the index.
 // The key won't be searchable until Index() is called.
-func (f *LshForest) Add(key string, sig []uint64) {
+func (f *LshForest) Add(key interface{}, sig []uint64) {
 	// Generate hash keys
 	Hs := make([]string, f.l)
 	for i := 0; i < f.l; i++ {
@@ -96,7 +96,7 @@ func (f *LshForest) Add(key string, sig []uint64) {
 	var wg sync.WaitGroup
 	wg.Add(len(f.initHashTables))
 	for i := range f.initHashTables {
-		go func(ht initHashTable, hk, key string) {
+		go func(ht initHashTable, hk string, key interface{}) {
 			if _, exist := ht[hk]; exist {
 				ht[hk] = append(ht[hk], key)
 			} else {
@@ -136,7 +136,7 @@ func (f *LshForest) Index() {
 }
 
 // Query returns candidate keys given the query signature and parameters.
-func (f *LshForest) Query(sig []uint64, K, L int, out chan<- string, done <-chan struct{}) {
+func (f *LshForest) Query(sig []uint64, K, L int, out chan<- interface{}, done <-chan struct{}) {
 	if K == -1 {
 		K = f.k
 	}
@@ -150,7 +150,7 @@ func (f *LshForest) Query(sig []uint64, K, L int, out chan<- string, done <-chan
 		Hs[i] = f.hashKeyFunc(sig[i*f.k : i*f.k+K])
 	}
 	// Query hash tables in parallel
-	keyChan := make(chan string)
+	keyChan := make(chan interface{})
 	var wg sync.WaitGroup
 	wg.Add(L)
 	for i := 0; i < L; i++ {
@@ -176,7 +176,7 @@ func (f *LshForest) Query(sig []uint64, K, L int, out chan<- string, done <-chan
 		wg.Wait()
 		close(keyChan)
 	}()
-	seens := make(map[string]bool)
+	seens := make(map[interface{}]bool)
 	for key := range keyChan {
 		if _, seen := seens[key]; seen {
 			continue
