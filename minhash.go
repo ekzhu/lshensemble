@@ -54,6 +54,28 @@ func (m *Minhash) Signature() []uint64 {
 	return m.mw.Signature()
 }
 
+// Containment returns the estimated containment of
+// |Q \intersect X| / |Q|.
+// q and x are the signatures of Q and X respectively.
+// If either size is 0, the result is defined to be 0.
+func Containment(q, x []uint64, qSize, xSize int) float64 {
+	if qSize == 0 || xSize == 0 {
+		return 0.0
+	}
+	var eq int
+	for i, hv := range q {
+		if x[i] == hv {
+			eq++
+		}
+	}
+	jaccard := float64(eq) / float64(len(q))
+	c := (float64(xSize)/float64(qSize) + 1.0) * jaccard / (1.0 + jaccard)
+	if c > 1.0 {
+		return 1.0
+	}
+	return c
+}
+
 // SigToBytes serializes the signature into byte slice
 func SigToBytes(sig []uint64) []byte {
 	buf := new(bytes.Buffer)
