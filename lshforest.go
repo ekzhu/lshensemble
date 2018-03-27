@@ -3,7 +3,6 @@ package lshensemble
 import (
 	"math"
 	"sort"
-	"sync"
 )
 
 const (
@@ -93,46 +92,36 @@ func (f *LshForest) Add(key interface{}, sig []uint64) {
 		Hs[i] = f.hashKeyFunc(sig[i*f.k : (i+1)*f.k])
 	}
 	// Insert keys into the bootstrapping tables
-	var wg sync.WaitGroup
-	wg.Add(len(f.initHashTables))
 	for i := range f.initHashTables {
-		go func(ht initHashTable, hk string, key interface{}) {
-			if _, exist := ht[hk]; exist {
-				ht[hk] = append(ht[hk], key)
-			} else {
-				ht[hk] = make(keys, 1)
-				ht[hk][0] = key
-			}
-			wg.Done()
-		}(f.initHashTables[i], Hs[i], key)
+		ht := f.initHashTables[i]
+		hk := Hs[i]
+		if _, exist := ht[hk]; exist {
+			ht[hk] = append(ht[hk], key)
+		} else {
+			ht[hk] = make(keys, 1)
+			ht[hk][0] = key
+		}
 	}
-	wg.Wait()
 }
 
 // Index makes all the keys added searchable.
 func (f *LshForest) Index() {
-	var wg sync.WaitGroup
-	wg.Add(len(f.hashTables))
 	for i := range f.hashTables {
-		go func(htPtr *hashTable, initHtPtr *initHashTable) {
-			// Build sorted hash table using buckets from init hash tables
-			initHt := *initHtPtr
-			ht := *htPtr
-			for hashKey := range initHt {
-				ks, _ := initHt[hashKey]
-				ht = append(ht, bucket{
-					hashKey: hashKey,
-					keys:    ks,
-				})
-			}
-			sort.Sort(ht)
-			*htPtr = ht
-			// Reset the init hash tables
-			*initHtPtr = make(initHashTable)
-			wg.Done()
-		}(&(f.hashTables[i]), &(f.initHashTables[i]))
+		// Build sorted hash table using buckets from init hash tables
+		initHt := f.initHashTables[i]
+		ht := f.hashTables[i]
+		for hashKey := range initHt {
+			ks, _ := initHt[hashKey]
+			ht = append(ht, bucket{
+				hashKey: hashKey,
+				keys:    ks,
+			})
+		}
+		sort.Sort(ht)
+		f.hashTables[i] = ht
+		// Reset the init hash tables
+		f.initHashTables[i] = make(initHashTable)
 	}
-	wg.Wait()
 }
 
 // Query returns candidate keys given the query signature and parameters.
@@ -149,40 +138,28 @@ func (f *LshForest) Query(sig []uint64, K, L int, out chan<- interface{}, done <
 	for i := 0; i < L; i++ {
 		Hs[i] = f.hashKeyFunc(sig[i*f.k : i*f.k+K])
 	}
-	// Query hash tables in parallel
-	keyChan := make(chan interface{})
-	var wg sync.WaitGroup
-	wg.Add(L)
+	seens := make(map[interface{}]bool)
 	for i := 0; i < L; i++ {
-		go func(ht hashTable, hk string) {
-			defer wg.Done()
-			k := sort.Search(len(ht), func(x int) bool {
-				return ht[x].hashKey[:prefixSize] >= hk
-			})
-			if k < len(ht) && ht[k].hashKey[:prefixSize] == hk {
-				for j := k; j < len(ht) && ht[j].hashKey[:prefixSize] == hk; j++ {
-					for _, key := range ht[j].keys {
-						select {
-						case keyChan <- key:
-						case <-done:
-							return
-						}
+		ht := f.hashTables[i]
+		hk := Hs[i]
+		k := sort.Search(len(ht), func(x int) bool {
+			return ht[x].hashKey[:prefixSize] >= hk
+		})
+		if k < len(ht) && ht[k].hashKey[:prefixSize] == hk {
+			for j := k; j < len(ht) && ht[j].hashKey[:prefixSize] == hk; j++ {
+				for _, key := range ht[j].keys {
+					if _, seen := seens[key]; seen {
+						continue
+					}
+					seens[key] = true
+					select {
+					case out <- key:
+					case <-done:
+						return
 					}
 				}
 			}
-		}(f.hashTables[i], Hs[i])
-	}
-	go func() {
-		wg.Wait()
-		close(keyChan)
-	}()
-	seens := make(map[interface{}]bool)
-	for key := range keyChan {
-		if _, seen := seens[key]; seen {
-			continue
 		}
-		out <- key
-		seens[key] = true
 	}
 }
 

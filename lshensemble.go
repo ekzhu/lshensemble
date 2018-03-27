@@ -89,15 +89,9 @@ func (e *LshEnsemble) Add(key interface{}, sig []uint64, partInd int) {
 
 // Index makes all added domains searchable.
 func (e *LshEnsemble) Index() {
-	var wg sync.WaitGroup
-	wg.Add(len(e.lshes))
 	for i := range e.lshes {
-		go func(lsh Lsh) {
-			lsh.Index()
-			wg.Done()
-		}(e.lshes[i])
+		e.lshes[i].Index()
 	}
-	wg.Wait()
 }
 
 // Query returns the candidate domain keys in a channel.
