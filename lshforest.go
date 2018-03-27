@@ -47,9 +47,6 @@ func newLshForest(k, l, hashValueSize int) *LshForest {
 		panic("k and l must be positive")
 	}
 	hashTables := make([]hashTable, l)
-	for i := range hashTables {
-		hashTables[i] = make(hashTable, 0)
-	}
 	initHashTables := make([]initHashTable, l)
 	for i := range initHashTables {
 		initHashTables[i] = make(initHashTable)
@@ -107,14 +104,12 @@ func (f *LshForest) Add(key interface{}, sig []uint64) {
 // Index makes all the keys added searchable.
 func (f *LshForest) Index() {
 	for i := range f.hashTables {
+		ht := make(hashTable, 0, len(f.initHashTables[i]))
 		// Build sorted hash table using buckets from init hash tables
-		initHt := f.initHashTables[i]
-		ht := f.hashTables[i]
-		for hashKey := range initHt {
-			ks, _ := initHt[hashKey]
+		for hashKey, keys := range f.initHashTables[i] {
 			ht = append(ht, bucket{
 				hashKey: hashKey,
-				keys:    ks,
+				keys:    keys,
 			})
 		}
 		sort.Sort(ht)
