@@ -5,7 +5,8 @@ import (
 	"time"
 )
 
-func benchmark_linearscan(rawDomains []rawDomain, queries []rawDomain, threshold float64, outputFilename string) {
+func benchmarkLinearscan(rawDomains []rawDomain, queries []rawDomain,
+	threshold float64, outputFilename string) {
 	log.Printf("Start Linear Scan with %d queries", len(queries))
 	results := make(chan queryResult)
 	go func() {

@@ -92,25 +92,48 @@ package.
 sort.Sort(lshensemble.BySize(domainRecords))
 ```
 
-Now you can use `BootstrapLshEnsemble` 
-(or `BootstrapLshEnsemblePlus` for better accuracy at higher memory cost\*) 
-to create an LSH Ensemble index. You need to
+Now you can use `BootstrapLshEnsembleOptimal`/`BootstrapLshEnsembleEquiDepth`
+(or `BootstrapLshEnsemblePlusOptimal`/`BootstrapLshEnsemblePlusEquiDepth`) 
+for better accuracy at higher memory cost\*) 
+to create an LSH Ensemble index. 
+`BootstrapLshEnsembleOptimal` uses dynamic programming to create partitions that
+are optimal in the sense that the total number of false positives generated from
+all the partitions are minimized. This method can be
+a bit slower due to the dynamic programming overhead, however, it creates
+optimized partitions for any kind of data distribution.
+`BootstrapLshEnsembleEquiDepth` uses simple equi-depth -- same number of domains
+in every partition. This is method is described in the original 
+[paper](http://www.vldb.org/pvldb/vol9/p1185-zhu.pdf) as suitable for power-law
+distributed domain sizes, which is common in real-world domains.
+You need to
 specify the number of partitions to use and some other parameters.
 The LSH parameter K (number of hash functions per band) is dynamically tuned at query-time,
 but the maximum value should be specified here.
 
-\* See [explanation](#maxk-explanation) for the difference.
+\* See [explanation](#maxk-explanation) for the reason for the "Plus" version.
 
 ```go
-// set the number of partitions
+// Set the number of partitions
 numPart := 8
 
-// set the maximum value for the MinHash LSH parameter K 
+// Set the maximum value for the MinHash LSH parameter K 
 // (number of hash functions per band).
 maxK := 4
 
-// create index, you can also use BootstrapLshEnsemblePlus for better accuracy
-index, err := lshensemble.BootstrapLshEnsemble(numPart, numHash, maxK, len(domainRecords), lshensemble.Recs2Chan(domainRecords))
+// Create index using equi-depth partitioning
+// You can also use BootstrapLshEnsemblePlusEquiDepth for better accuracy
+index_eqd, err := lshensemble.BootstrapLshEnsembleEquiDepth(numPart, numHash, maxK, 
+    len(domainRecords), lshensemble.Recs2Chan(domainRecords))
+if err != nil {
+	panic(err)
+}
+
+// Create index using optimal partitioning
+// You can also use BootstrapLshEnsemblePlusOptimal for better accuracy
+index_opt, err := lshensemble.BootstrapLshEnsembleOptimal(numPart, numHash, maxK,
+    func () <-chan *lshensemble.DomainRecord { 
+        return lshensemble.Recs2Chan(domainRecords); 
+    })
 if err != nil {
 	panic(err)
 }
@@ -119,7 +142,7 @@ if err != nil {
 For better memory efficiency when the number of domains is large, 
 it's wiser to use Golang channels and goroutines
 to pipeline the generation of the signatures, and then use disk-based sorting to sort the domain records. 
-This is why `BootstrapLshEnsemble` accepts a channel of `*DomainRecord` as input.
+This is why `BootstrapLshEnsembleEquiDepth` accepts a channel of `*DomainRecord` as input.
 For a small number of domains, you simply use `Recs2Chan` to convert the sorted slice of `*DomainRecord`
 into a `chan *DomainRecord`.
 To help serializing the domain records to disk, you can use `SerializeSignature`
@@ -223,9 +246,11 @@ Essentially, we have less freedom in varying `L`, as
 In this library for LSH Ensemble, we provide both implmentations 
 (LSH Forest and "vanilla" MinHash LSH ).
 Specifically, 
-* `BootstrapLshEnsemble` builds the index using the LSH Forest implementation, 
+* `BootstrapLshEnsembleEquiDepth` and `BootstrapLshEnsembleOptimal` 
+build the index using the LSH Forest implementation, 
 which use less memory but with a more restricted parameter space for optimization.
-* `BootstrapLshEnsemblePlus` builds the index using the "vanilla" MinHash LSH
+* `BootstrapLshEnsemblePlusEquiDepth` and `BootstrapLshEnsemblePlusOptimal` 
+build the index using the "vanilla" MinHash LSH
 implementation (one LSH for every `K`), which uses more memory (bounded by `MaxK`)
 but with no restriction on `L`.
 

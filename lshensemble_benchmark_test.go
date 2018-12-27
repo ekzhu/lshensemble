@@ -6,7 +6,16 @@ import (
 	"time"
 )
 
-func benchmark_lshensemble(rawDomains []rawDomain, rawQueries []rawDomain, threshold float64, outputFilename string) {
+const (
+	numHash = 256
+	numPart = 32
+	maxK    = 4
+	// useOptimalPartitions = true
+	useOptimalPartitions = false
+)
+
+func benchmarkLshEnsemble(rawDomains []rawDomain, rawQueries []rawDomain,
+	threshold float64, outputFilename string) {
 	numHash := 256
 	numPart := 32
 	maxK := 4
@@ -27,8 +36,14 @@ func benchmark_lshensemble(rawDomains []rawDomain, rawQueries []rawDomain, thres
 	// Indexing
 	log.Print("Start building LSH Ensemble index")
 	sort.Sort(BySize(domainRecords))
-	index, _ := BootstrapLshEnsemblePlus(numPart, numHash, maxK, len(domainRecords),
-		Recs2Chan(domainRecords))
+	var index *LshEnsemble
+	if useOptimalPartitions {
+		index, _ = BootstrapLshEnsemblePlusOptimal(numPart, numHash, maxK,
+			func() <-chan *DomainRecord { return Recs2Chan(domainRecords) })
+	} else {
+		index, _ = BootstrapLshEnsemblePlusEquiDepth(numPart, numHash, maxK,
+			len(domainRecords), Recs2Chan(domainRecords))
+	}
 	log.Print("Finished building LSH Ensemble index")
 	// Querying
 	log.Printf("Start querying LSH Ensemble index with %d queries", len(queries))

@@ -13,9 +13,15 @@ import (
 	"time"
 )
 
-const benchmarkSeed = 42
-const fracQuery = 0.01
-const minDomainSize = 10
+const (
+	benchmarkSeed = 42
+	fracQuery     = 0.01
+	minDomainSize = 10
+)
+
+var (
+	thresholds = []float64{0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0}
+)
 
 // Running this function requires a `_cod_domains` directory
 // in the current directory.
@@ -49,17 +55,19 @@ func Benchmark_CanadianOpenData(b *testing.B) {
 	}
 
 	// Run benchmark
-	log.Printf("Canadian Open Data benchmark threshold = %.2f", 0.5)
-	benchmark_cod(rawDomains, queries, 0.5)
+	for _, threshold := range thresholds {
+		log.Printf("Canadian Open Data benchmark threshold = %.2f", threshold)
+		benchmarkCOD(rawDomains, queries, threshold)
+	}
 }
 
-func benchmark_cod(rawDomains, queries []rawDomain, threshold float64) {
-	linearscan_output := fmt.Sprintf("_cod_linearscan_threshold=%.2f", threshold)
-	lshensemble_output := fmt.Sprintf("_cod_lshensemble_threshold=%.2f", threshold)
-	accuracy_output := fmt.Sprintf("_cod_accuracy_threhsold=%.2f", threshold)
-	benchmark_linearscan(rawDomains, queries, threshold, linearscan_output)
-	benchmark_lshensemble(rawDomains, queries, threshold, lshensemble_output)
-	benchmark_accuracy(linearscan_output, lshensemble_output, accuracy_output)
+func benchmarkCOD(rawDomains, queries []rawDomain, threshold float64) {
+	linearscanOutput := fmt.Sprintf("_cod_linearscan_threshold=%.2f", threshold)
+	lshensembleOutput := fmt.Sprintf("_cod_lshensemble_threshold=%.2f", threshold)
+	accuracyOutput := fmt.Sprintf("_cod_accuracy_threshold=%.2f", threshold)
+	benchmarkLinearscan(rawDomains, queries, threshold, linearscanOutput)
+	benchmarkLshEnsemble(rawDomains, queries, threshold, lshensembleOutput)
+	benchmarkAccuracy(linearscanOutput, lshensembleOutput, accuracyOutput)
 }
 
 type rawDomain struct {

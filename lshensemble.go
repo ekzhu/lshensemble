@@ -1,6 +1,7 @@
 package lshensemble
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -85,6 +86,19 @@ func NewLshEnsemblePlus(parts []Partition, numHash, maxK int) *LshEnsemble {
 // The added domain won't be searchable until the Index() function is called.
 func (e *LshEnsemble) Add(key interface{}, sig []uint64, partInd int) {
 	e.lshes[partInd].Add(key, sig)
+}
+
+// Prepare adds a new domain to the index given its size, and partition will
+// be selected automatically. It could be more efficient to use Add().
+// The added domain won't be searchable until the Index() function is called.
+func (e *LshEnsemble) Prepare(key interface{}, sig []uint64, size int) error {
+	for i := range e.Partitions {
+		if size >= e.Partitions[i].Lower && size <= e.Partitions[i].Upper {
+			e.Add(key, sig, i)
+			break
+		}
+	}
+	return errors.New("No matching partition found")
 }
 
 // Index makes all added domains searchable.

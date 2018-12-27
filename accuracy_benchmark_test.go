@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func benchmark_accuracy(groundTruthFilename, queryResultFilename, outputFilename string) {
+func benchmarkAccuracy(groundTruthFilename, queryResultFilename, outputFilename string) {
 	groundTruths := readQueryResultFile(groundTruthFilename)
 	queryResults := readQueryResultFile(queryResultFilename)
 	precisions := make([]float64, 0)
@@ -67,7 +67,7 @@ func recallPrecision(result, groundTruth queryResult) (recall, precision float64
 	overlap := 0
 	for id := range test {
 		if _, found := truth[id]; found {
-			overlap += 1
+			overlap++
 		}
 	}
 	recall = float64(overlap) / float64(len(truth))
@@ -82,6 +82,7 @@ func readQueryResultFile(queryResultFile string) []queryResult {
 		panic(err)
 	}
 	scanner := bufio.NewScanner(file)
+	scanner.Buffer(nil, 4096*1024*1024)
 	for scanner.Scan() {
 		raw := strings.Split(scanner.Text(), "\t")
 		key := raw[0]
