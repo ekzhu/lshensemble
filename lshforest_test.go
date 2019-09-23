@@ -41,9 +41,10 @@ func Test_LshForest(t *testing.T) {
 	f.Add("sig1", sig1)
 	f.Add("sig2", sig2)
 	f.Add("sig3", sig3)
+
 	f.Index()
 	for i := range f.hashTables {
-		if len(f.hashTables[i]) != 2 {
+		if len(f.hashTables[i]) != 3 {
 			t.Fatal(f.hashTables[i])
 		}
 	}

@@ -12,17 +12,15 @@ const (
 // NewLshForest default constructor uses 32 bit hash value
 var NewLshForest = NewLshForest32
 
-type keys []interface{}
-
-// For initial bootstrapping
-type initHashTable map[string]keys
-
-type bucket struct {
+// entry contains the hash key (from minhash signature) and the indexed key
+type entry struct {
 	hashKey string
-	keys    keys
+	key     interface{}
 }
 
-type hashTable []bucket
+// hashTable is a look-up table implemented as a slice sorted by hash keys.
+// Look-up operation is implemented using binary search.
+type hashTable []entry
 
 func (h hashTable) Len() int           { return len(h) }
 func (h hashTable) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
@@ -36,10 +34,10 @@ func (h hashTable) Less(i, j int) bool { return h[i].hashKey < h[j].hashKey }
 type LshForest struct {
 	k              int
 	l              int
-	initHashTables []initHashTable
 	hashTables     []hashTable
 	hashKeyFunc    hashKeyFunc
 	hashValueSize  int
+	numIndexedKeys int
 }
 
 func newLshForest(k, l, hashValueSize int) *LshForest {
@@ -47,17 +45,13 @@ func newLshForest(k, l, hashValueSize int) *LshForest {
 		panic("k and l must be positive")
 	}
 	hashTables := make([]hashTable, l)
-	initHashTables := make([]initHashTable, l)
-	for i := range initHashTables {
-		initHashTables[i] = make(initHashTable)
-	}
 	return &LshForest{
 		k:              k,
 		l:              l,
 		hashValueSize:  hashValueSize,
-		initHashTables: initHashTables,
 		hashTables:     hashTables,
 		hashKeyFunc:    hashKeyFuncGen(hashValueSize),
+		numIndexedKeys: 0,
 	}
 }
 
@@ -80,43 +74,31 @@ func NewLshForest16(k, l int) *LshForest {
 	return newLshForest(k, l, 2)
 }
 
+func (f *LshForest) hashKeys(sig []uint64, K int) []string {
+	hs := make([]string, f.l)
+	for i := 0; i < f.l; i++ {
+		hs[i] = f.hashKeyFunc(sig[i*f.k : i*f.k+K])
+	}
+	return hs
+}
+
 // Add a key with MinHash signature into the index.
 // The key won't be searchable until Index() is called.
 func (f *LshForest) Add(key interface{}, sig []uint64) {
 	// Generate hash keys
-	Hs := make([]string, f.l)
-	for i := 0; i < f.l; i++ {
-		Hs[i] = f.hashKeyFunc(sig[i*f.k : (i+1)*f.k])
-	}
-	// Insert keys into the bootstrapping tables
-	for i := range f.initHashTables {
-		ht := f.initHashTables[i]
-		hk := Hs[i]
-		if _, exist := ht[hk]; exist {
-			ht[hk] = append(ht[hk], key)
-		} else {
-			ht[hk] = make(keys, 1)
-			ht[hk][0] = key
-		}
+	hs := f.hashKeys(sig, f.k)
+	// Insert keys into the hash tables by appending.
+	for i := range f.hashTables {
+		f.hashTables[i] = append(f.hashTables[i], entry{hs[i], key})
 	}
 }
 
 // Index makes all the keys added searchable.
 func (f *LshForest) Index() {
 	for i := range f.hashTables {
-		ht := make(hashTable, 0, len(f.initHashTables[i]))
-		// Build sorted hash table using buckets from init hash tables
-		for hashKey, keys := range f.initHashTables[i] {
-			ht = append(ht, bucket{
-				hashKey: hashKey,
-				keys:    keys,
-			})
-		}
-		sort.Sort(ht)
-		f.hashTables[i] = ht
-		// Reset the init hash tables
-		f.initHashTables[i] = make(initHashTable)
+		sort.Sort(f.hashTables[i])
 	}
+	f.numIndexedKeys = len(f.hashTables[0])
 }
 
 // Query returns candidate keys given the query signature and parameters.
@@ -129,29 +111,25 @@ func (f *LshForest) Query(sig []uint64, K, L int, out chan<- interface{}, done <
 	}
 	prefixSize := f.hashValueSize * K
 	// Generate hash keys
-	Hs := make([]string, L)
-	for i := 0; i < L; i++ {
-		Hs[i] = f.hashKeyFunc(sig[i*f.k : i*f.k+K])
-	}
+	hashKeys := f.hashKeys(sig, K)
 	seens := make(map[interface{}]bool)
 	for i := 0; i < L; i++ {
 		ht := f.hashTables[i]
-		hk := Hs[i]
+		hk := hashKeys[i]
 		k := sort.Search(len(ht), func(x int) bool {
 			return ht[x].hashKey[:prefixSize] >= hk
 		})
 		if k < len(ht) && ht[k].hashKey[:prefixSize] == hk {
 			for j := k; j < len(ht) && ht[j].hashKey[:prefixSize] == hk; j++ {
-				for _, key := range ht[j].keys {
-					if _, seen := seens[key]; seen {
-						continue
-					}
-					seens[key] = true
-					select {
-					case out <- key:
-					case <-done:
-						return
-					}
+				key := ht[j].key
+				if _, seen := seens[key]; seen {
+					continue
+				}
+				seens[key] = true
+				select {
+				case out <- key:
+				case <-done:
+					return
 				}
 			}
 		}
