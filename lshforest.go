@@ -114,7 +114,8 @@ func (f *LshForest) Query(sig []uint64, K, L int, out chan<- interface{}, done <
 	hashKeys := f.hashKeys(sig, K)
 	seens := make(map[interface{}]bool)
 	for i := 0; i < L; i++ {
-		ht := f.hashTables[i]
+		// Only search over indexed keys.
+		ht := f.hashTables[i][:f.numIndexedKeys]
 		hk := hashKeys[i]
 		k := sort.Search(len(ht), func(x int) bool {
 			return ht[x].hashKey[:prefixSize] >= hk
