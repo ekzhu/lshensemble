@@ -6,10 +6,10 @@ var (
 	errDomainSizeOrder = errors.New("Domain records must be sorted in ascending order of size")
 )
 
-func bootstrapOptimalPartitions(domains <-chan *DomainRecord, numPart int) []Partition {
+func bootstrapOptimalPartitions(domains <-chan *DomainRecord, numPart int) ([]Partition, int) {
 	sizes, counts := computeSizeDistribution(domains)
 	partitions := optimalPartitions(sizes, counts, numPart)
-	return partitions
+	return partitions, len(sizes)
 }
 
 func bootstrapOptimal(index *LshEnsemble, sortedDomains <-chan *DomainRecord) error {
@@ -45,8 +45,8 @@ func bootstrapOptimal(index *LshEnsemble, sortedDomains <-chan *DomainRecord) er
 // emitting domains in sorted order by their sizes.
 func BootstrapLshEnsembleOptimal(numPart, numHash, maxK int,
 	sortedDomainFactory func() <-chan *DomainRecord) (*LshEnsemble, error) {
-	partitions := bootstrapOptimalPartitions(sortedDomainFactory(), numPart)
-	index := NewLshEnsemble(partitions, numHash, maxK)
+	partitions, count := bootstrapOptimalPartitions(sortedDomainFactory(), numPart)
+	index := NewLshEnsemble(partitions, numHash, maxK, count)
 	err := bootstrapOptimal(index, sortedDomainFactory())
 	if err != nil {
 		return nil, err
@@ -65,8 +65,8 @@ func BootstrapLshEnsembleOptimal(numPart, numHash, maxK int,
 // emitting domains in sorted order by their sizes.
 func BootstrapLshEnsemblePlusOptimal(numPart, numHash, maxK int,
 	sortedDomainFactory func() <-chan *DomainRecord) (*LshEnsemble, error) {
-	partitions := bootstrapOptimalPartitions(sortedDomainFactory(), numPart)
-	index := NewLshEnsemblePlus(partitions, numHash, maxK)
+	partitions, count := bootstrapOptimalPartitions(sortedDomainFactory(), numPart)
+	index := NewLshEnsemblePlus(partitions, numHash, maxK, count)
 	err := bootstrapOptimal(index, sortedDomainFactory())
 	if err != nil {
 		return nil, err
@@ -107,7 +107,8 @@ func bootstrapEquiDepth(index *LshEnsemble, totalNumDomains int, sortedDomains <
 // sortedDomains is a DomainRecord channel emitting domains in sorted order by their sizes.
 func BootstrapLshEnsembleEquiDepth(numPart, numHash, maxK, totalNumDomains int,
 	sortedDomains <-chan *DomainRecord) (*LshEnsemble, error) {
-	index := NewLshEnsemble(make([]Partition, numPart), numHash, maxK)
+	index := NewLshEnsemble(make([]Partition, numPart), numHash, maxK,
+		totalNumDomains)
 	err := bootstrapEquiDepth(index, totalNumDomains, sortedDomains)
 	if err != nil {
 		return nil, err
@@ -125,7 +126,8 @@ func BootstrapLshEnsembleEquiDepth(numPart, numHash, maxK, totalNumDomains int,
 // sortedDomains is a DomainRecord channel emitting domains in sorted order by their sizes.
 func BootstrapLshEnsemblePlusEquiDepth(numPart, numHash, maxK,
 	totalNumDomains int, sortedDomains <-chan *DomainRecord) (*LshEnsemble, error) {
-	index := NewLshEnsemblePlus(make([]Partition, numPart), numHash, maxK)
+	index := NewLshEnsemblePlus(make([]Partition, numPart), numHash, maxK,
+		totalNumDomains)
 	err := bootstrapEquiDepth(index, totalNumDomains, sortedDomains)
 	if err != nil {
 		return nil, err

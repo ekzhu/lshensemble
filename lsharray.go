@@ -15,10 +15,11 @@ type LshForestArray struct {
 // NewLshForestArray initializes with parameters:
 // maxK is the maximum value for the MinHash parameter K - the number of hash functions per "band".
 // numHash is the number of hash functions in MinHash.
-func NewLshForestArray(maxK, numHash int) *LshForestArray {
+// initSize is the initial size of underlying hash tables to allocate.
+func NewLshForestArray(maxK, numHash, initSize int) *LshForestArray {
 	array := make([]*LshForest, maxK)
 	for k := 1; k <= maxK; k++ {
-		array[k-1] = NewLshForest(k, numHash/k)
+		array[k-1] = NewLshForest(k, numHash/k, initSize)
 	}
 	return &LshForestArray{
 		maxK:    maxK,

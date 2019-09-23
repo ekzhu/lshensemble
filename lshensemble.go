@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/orcaman/concurrent-map"
+	cmap "github.com/orcaman/concurrent-map"
 )
 
 type param struct {
@@ -51,10 +51,11 @@ type LshEnsemble struct {
 // NewLshEnsemble initializes a new index consists of MinHash LSH implemented using LshForest.
 // numHash is the number of hash functions in MinHash.
 // maxK is the maximum value for the MinHash parameter K - the number of hash functions per "band".
-func NewLshEnsemble(parts []Partition, numHash, maxK int) *LshEnsemble {
+// initSize is the initial size of underlying hash tables to allocate.
+func NewLshEnsemble(parts []Partition, numHash, maxK, initSize int) *LshEnsemble {
 	lshes := make([]Lsh, len(parts))
 	for i := range lshes {
-		lshes[i] = NewLshForest(maxK, numHash/maxK)
+		lshes[i] = NewLshForest(maxK, numHash/maxK, initSize)
 	}
 	return &LshEnsemble{
 		lshes:      lshes,
@@ -68,10 +69,11 @@ func NewLshEnsemble(parts []Partition, numHash, maxK int) *LshEnsemble {
 // NewLshEnsemblePlus initializes a new index consists of MinHash LSH implemented using LshForestArray.
 // numHash is the number of hash functions in MinHash.
 // maxK is the maximum value for the MinHash parameter K - the number of hash functions per "band".
-func NewLshEnsemblePlus(parts []Partition, numHash, maxK int) *LshEnsemble {
+// initSize is the initial size of underlying hash tables to allocate.
+func NewLshEnsemblePlus(parts []Partition, numHash, maxK, initSize int) *LshEnsemble {
 	lshes := make([]Lsh, len(parts))
 	for i := range lshes {
-		lshes[i] = NewLshForestArray(maxK, numHash)
+		lshes[i] = NewLshForestArray(maxK, numHash, initSize)
 	}
 	return &LshEnsemble{
 		lshes:      lshes,

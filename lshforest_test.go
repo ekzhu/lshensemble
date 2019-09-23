@@ -33,7 +33,7 @@ func Test_HashKeyFunc64(t *testing.T) {
 }
 
 func Test_LshForest(t *testing.T) {
-	f := NewLshForest16(2, 4)
+	f := NewLshForest16(2, 4, 3)
 	sig1 := randomSignature(8, 2)
 	sig2 := randomSignature(8, 1)
 	sig3 := randomSignature(8, 1)
@@ -68,6 +68,6 @@ func Test_LshForest(t *testing.T) {
 }
 
 func Test_LshForest_OptimalKL(t *testing.T) {
-	f := NewLshForest16(2, 32)
+	f := NewLshForest16(2, 32, 1)
 	t.Log(f.OptimalKL(32, 12, 0.5))
 }

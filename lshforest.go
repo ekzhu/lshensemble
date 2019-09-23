@@ -40,11 +40,14 @@ type LshForest struct {
 	numIndexedKeys int
 }
 
-func newLshForest(k, l, hashValueSize int) *LshForest {
+func newLshForest(k, l, hashValueSize, initSize int) *LshForest {
 	if k < 0 || l < 0 {
 		panic("k and l must be positive")
 	}
 	hashTables := make([]hashTable, l)
+	for i := range hashTables {
+		hashTables[i] = make(hashTable, 0, initSize)
+	}
 	return &LshForest{
 		k:              k,
 		l:              l,
@@ -56,22 +59,22 @@ func newLshForest(k, l, hashValueSize int) *LshForest {
 }
 
 // NewLshForest64 uses 64-bit hash values.
-func NewLshForest64(k, l int) *LshForest {
-	return newLshForest(k, l, 8)
+func NewLshForest64(k, l, initSize int) *LshForest {
+	return newLshForest(k, l, 8, initSize)
 }
 
 // NewLshForest32 uses 32-bit hash values.
 // MinHash signatures with 64 bit hash values will have
 // their hash values trimed.
-func NewLshForest32(k, l int) *LshForest {
-	return newLshForest(k, l, 4)
+func NewLshForest32(k, l, initSize int) *LshForest {
+	return newLshForest(k, l, 4, initSize)
 }
 
 // NewLshForest16 uses 16-bit hash values.
 // MinHash signatures with 64 or 32 bit hash values will have
 // their hash values trimed.
-func NewLshForest16(k, l int) *LshForest {
-	return newLshForest(k, l, 2)
+func NewLshForest16(k, l, initSize int) *LshForest {
+	return newLshForest(k, l, 2, initSize)
 }
 
 func (f *LshForest) hashKeys(sig []uint64, K int) []string {
