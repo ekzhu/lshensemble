@@ -12,7 +12,7 @@ Please cite this paper if you use this library in your work:
 >LSH Ensemble: Internet-Scale Domain Search. PVLDB 9(12): 1185-1196 (2016)
 >[Link](http://www.vldb.org/pvldb/vol9/p1185-zhu.pdf)
 
-[Presentation slides](http://www.cs.toronto.edu/~ekzhu/talks/lshensemble-vldb2016.pdf) @ VLDB 2016, New Delhi.
+[Presentation slides](http://ekzhu.com/talks/lshensemble-vldb2016.pdf) @ VLDB 2016, New Delhi.
 
 ## Datasets
 
